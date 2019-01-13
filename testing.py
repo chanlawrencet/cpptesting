@@ -1,6 +1,6 @@
 # Testing Suite Script
 # Lawrence Chan 
-# Dec 2018
+# Jan 2019
 # Goal: use this to write bash tests
 
 import subprocess
