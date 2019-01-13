@@ -1,0 +1,8 @@
+# config file for suite
+# 
+
+
+hwName=hw1
+useMains=m
+executable=exec
+

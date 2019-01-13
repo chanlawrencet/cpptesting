@@ -75,7 +75,7 @@ test33: test33.o BinarySearchTree.o pretty_print.o
 test34: test34.o BinarySearchTree.o pretty_print.o
 	${CXX} ${LDFLAGS} -o test34 test34.o BinarySearchTree.o pretty_print.o
 
-
+test01.o: test01.cpp BinarySearchTree.h
 test.o:              test.cpp BinarySearchTree.h 
 BinarySearchTree.o:  BinarySearchTree.cpp BinarySearchTree.h
 pretty_print.o:      pretty_print.cpp BinarySearchTree.h
