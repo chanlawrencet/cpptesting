@@ -3,6 +3,7 @@
 
 
 hwName=hw1
-useMains=m
-executable=exec
+useMains=y
+executable=hello
+
 

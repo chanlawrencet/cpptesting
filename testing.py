@@ -6,36 +6,53 @@
 import subprocess
 import os
 
+
 def main():
-    config = open('config',"r")
+
+    inputMode = int(input("inputmode? 1 = init, 2 = reset: "))
+    if inputMode == 1:
+        init()
+    elif inputMode == 2:
+        reset()
+    else:
+        print("Not 1 or 2")
+        exit(0)
+
+def reset():
+    toDelete = ['out','ref','vout', 'tmp']
+    for thing in toDelete:
+        subprocess.call("rm -rf " + thing, shell=True)
+    
+
+def init():
     inputs = {}
     hwName = None
     useMains = None
     executable = None
+
+    checkConfig()
+
+    # getting info from config file
+    file = open('./bin/config',"r")
+    config = file.read().splitlines()
     for line in config:
         theLine = line.split('=')
-        if theLine[0] == '\n' or line[0] == '#':
-            continue
-        if theLine[1] == '\n':
-            print('Field not completed! Aborting.')
-            exit(1)
-        inputs[theLine[0]] = theLine[1]
+        if len(theLine) == 2:
+            inputs[theLine[0]] = theLine[1]
     hwName = inputs['hwName']
-    useMains = inputs['useMains']
-    useMains = True if useMains  == 'y' else False
+    useMainsIn = inputs['useMains']
+    useMains = True if useMainsIn  == 'y' else False
+    if (useMains== False):
+        executable = inputs['executable'] # if using ref, executable is the same
 
-    print(hwName)
-    print(useMains)
-
-    print(executable)
+    print("hwname", hwName)
+    print("usemains", useMains)
+    print("executable", executable)
 
     checkDirs(useMains) # make sure dirs exist
     numTests = countTests(useMains) # count num tests
-    checkFiles(numTests) # make sure there are tests
-    checkMakefile(numTests) # if using mains, check if Makefile exists
-    #print("numtests:", numTests)
-    if (useMains== False):
-        executable = input('executable:') # if using ref, executable is the same
+    checkTests(numTests) # make sure there are tests
+    checkMakefile(useMains) # if using mains, check if Makefile exists
 
     dirsToMake = ['out','ref','vout', 'tmp']
     testnames = []
@@ -49,24 +66,15 @@ def main():
     for dir in dirsToMake:
         reMkdir(dir)
 
-    ## setup lists
-    for x in range(1, numTests + 1):
-        testName = 'test' + addZero(x)
-        testnames.append(str(testName))
-        inpath.append('in/' + testName + '.in')
-        cpppath.append('cpp/' + testName + '.cpp')
-        refpath.append('ref/' + testName + '.ref')
-        outpath.append('out/' + testName + '.out')
-        voutpath.append('vout/' + testName + '.vout')
-
-    print(inpath, cpppath, refpath, outpath, voutpath)
-
+    ## set up lists
+    setupLists(testnames, inpath, cpppath, refpath, outpath, voutpath, numTests)
 
     ## generate reference output
     if useMains == True:
         for x in range(0, numTests):
+
             subprocess.call("cp " + cpppath[x] + " tmp", shell=True)
-            subprocess.call("cp bin/Makefile tmep")
+            subprocess.call("cp ./bin/Makefile tmp", shell=True)
             subprocess.call
             #print("cp " + cpppath[x] + " tmp")
             #print("cp bin/Makefile .")
@@ -79,13 +87,31 @@ def main():
         for x in range(0, numTests):
             subprocess.call("./" + executable + "  < " + 
                             inpath[x] +  " > " + refpath[x], shell=True)
+# set up lists given
+def setupLists(testnames, inpath, cpppath, refpath, outpath, voutpath, numTests):
+    ## setup lists
+    for x in range(1, numTests + 1):
+        testName = 'test' + addZero(x)
+        testnames.append(str(testName))
+        inpath.append('in/' + testName + '.in')
+        cpppath.append('cpp/' + testName + '.cpp')
+        refpath.append('ref/' + testName + '.ref')
+        outpath.append('out/' + testName + '.out')
+        voutpath.append('vout/' + testName + '.vout')
+
+# check if config exists
+def checkConfig():
+    if not os.path.isfile('./bin/config'):
+        print('./bin/config not found! Aborting.')
+        exit(1)
+    return
 # convert nonzero int into string with leading zero
 def addZero(inputNum):
     if inputNum < 10:
         return "0" + str(inputNum)
     else:
         return str(inputNum)
-# check if /bin/Makefile exists
+# check if /bin/Makefile exists, if necessary
 def checkMakefile(useMains):
     if useMains == False:
         return
@@ -102,7 +128,7 @@ def checkDirs(useMains):
         exit(1)
 
 # make sure # tests is non 0
-def checkFiles(numTests):
+def checkTests(numTests):
     if (numTests == 0):
         print('no tests found! Aborting.')
         exit(1)
