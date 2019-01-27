@@ -1,9 +1,12 @@
 # config file for suite
 # 
 
+# by construction/default, if useMains == n, it has to have input
 
 hwName=hw1
-useMains=y
-executable=hello
+useMains=n
+executable=hw4
+hasinput=y
 
-
+# for generate
+scriptname=tests.sh

@@ -9,13 +9,15 @@ import os
 
 def main():
 
-    inputMode = int(input("inputmode? 1 = init, 2 = reset: "))
+    inputMode = int(input("inputmode? 1 = init, 2 = generate, 3 = reset: "))
     if inputMode == 1:
         init()
     elif inputMode == 2:
+        generate()
+    elif inputMode == 3:
         reset()
     else:
-        print("Not 1 or 2")
+        print("Not 1, 2, or 3")
         exit(0)
 
 def reset():
@@ -23,70 +25,142 @@ def reset():
     for thing in toDelete:
         subprocess.call("rm -rf " + thing, shell=True)
     
+# generate script (path from config)
+def generate():
+    inputs = {}
+    hwName = None
+    useMains = None
+    executable = None
+    hasInput = None
 
+    # make sure config exists
+    checkConfig()
+
+    # getting info from config file
+    getConfig(inputs)
+
+    scriptname = inputs['scriptname']
+    hwName = inputs['hwName']
+    useMainsIn = inputs['useMains']
+    hasInputIn = inputs['hasinput']
+    hasInput = True if hasInputIn  == 'y' else False
+    useMains = True if useMainsIn  == 'y' else False
+    if (useMains == False):
+        executable = inputs['executable'] # if using ref, executable is the same
+
+    checkDirs(useMains) # make sure cpp and in exist (to count # tests)
+    numTests = countTests(useMains) # count num tests
+    checkTests(numTests) # make sure there are tests
+
+    ## set up lists
+    testnames, inpath, cpppath, refpath, outpath, voutpath = [], [], [], [], [], []
+    setupLists(testnames, inpath, cpppath, refpath, outpath, voutpath, numTests)
+
+    if useMains:
+        printMains()
+    else:
+        printRefs()
+    exit(0)
+
+# print script to scriptname, with extra compile commands
+def printMains():
+    print('mkdir out')
+
+# initialize all dirs and refs necessary
 def init():
     inputs = {}
     hwName = None
     useMains = None
     executable = None
+    hasInput = None
 
+    # make sure config exists
     checkConfig()
 
     # getting info from config file
+    getConfig(inputs)
+
+    hwName = inputs['hwName']
+    useMainsIn = inputs['useMains']
+    hasInputIn = inputs['hasinput']
+    hasInput = True if hasInputIn  == 'y' else False
+    useMains = True if useMainsIn  == 'y' else False
+    if (useMains == False):
+        executable = inputs['executable'] # if using ref, executable is the same
+
+    checkDirs(useMains) # make sure cpp and in exist
+    numTests = countTests(useMains) # count num tests
+    checkTests(numTests) # make sure there are tests
+    checkMakefile(useMains) # if using mains, check if Makefile exists
+    checkReferences(useMains, executable) # if using mains, check bin/ref, else, check reference
+
+    ## set up directories
+    dirsToMake = ['ref', 'tmp']
+    for dir in dirsToMake:
+        reMkdir(dir)
+
+    ## set up lists
+    testnames, inpath, cpppath, refpath, outpath, voutpath = [], [], [], [], [], []
+    setupLists(testnames, inpath, cpppath, refpath, outpath, voutpath, numTests)
+
+    if useMains == True:
+        mainsRef(numTests, cpppath, testnames, inpath, refpath, hasInput) # generate reference for mains
+    else:
+        refRef(numTests, executable, inpath, refpath)
+
+def checkReferences(useMains, executable):
+    if not os.path.isdir('./reference'):
+        print('./reference not found! Aborting.')
+        exit(1)
+
+    if useMains:
+        out = subprocess.Popen("ls ./reference/ | wc -l", stdout=subprocess.PIPE, stderr=subprocess.STDOUT , shell=True)
+        splitted = list(str(out.communicate()[0]))
+        if (countList(splitted) == 0):
+            print('Nothing in ./reference! Aborting.')
+            exit(1)
+    else:
+        print("executable", executable)
+        if not os.path.isfile('./reference/' + executable):
+            print('./bin/' + executable + ' not found! Aborting.')
+            exit(1)
+
+# getting info from config file
+def getConfig(inputs):
     file = open('./bin/config',"r")
     config = file.read().splitlines()
     for line in config:
         theLine = line.split('=')
         if len(theLine) == 2:
             inputs[theLine[0]] = theLine[1]
-    hwName = inputs['hwName']
-    useMainsIn = inputs['useMains']
-    useMains = True if useMainsIn  == 'y' else False
-    if (useMains== False):
-        executable = inputs['executable'] # if using ref, executable is the same
 
-    print("hwname", hwName)
-    print("usemains", useMains)
-    print("executable", executable)
-
-    checkDirs(useMains) # make sure dirs exist
-    numTests = countTests(useMains) # count num tests
-    checkTests(numTests) # make sure there are tests
-    checkMakefile(useMains) # if using mains, check if Makefile exists
-
-    dirsToMake = ['out','ref','vout', 'tmp']
-    testnames = []
-    inpath = []
-    cpppath = []
-    refpath = []
-    outpath = []
-    voutpath = []
-
-    ## set up directories
-    for dir in dirsToMake:
-        reMkdir(dir)
-
-    ## set up lists
-    setupLists(testnames, inpath, cpppath, refpath, outpath, voutpath, numTests)
-
-    ## generate reference output
-    if useMains == True:
-        for x in range(0, numTests):
-
-            subprocess.call("cp " + cpppath[x] + " tmp", shell=True)
-            subprocess.call("cp ./bin/Makefile tmp", shell=True)
-            subprocess.call
-            #print("cp " + cpppath[x] + " tmp")
-            #print("cp bin/Makefile .")
-            #print("make "+ testnames[x] + " -C tmp")
-            #print("rm temp")
-        exit(0)
-        subprocess.call("make -C bin/", shell=True)
-        subprocess.call("ls", shell=True)
-    else:
-        for x in range(0, numTests):
-            subprocess.call("./" + executable + "  < " + 
+# generate reference for refs
+# by default there has to be an input (or else what are you testing?)
+def refRef(numTests, executable, inpath, refpath):
+    for x in range(0, numTests):
+        subprocess.call("./reference/" + executable + "  < " + 
+                        inpath[x] +  " > " + refpath[x], shell=True)
+# generate reference for mains
+def mainsRef(numTests, cpppath, testnames, inpath, refpath, hasInput):
+    for x in range(0, numTests):
+        print('Compiling ' + testnames[x])
+        subprocess.call("cp " + cpppath[x] + " tmp", shell=True)
+        subprocess.call("cp ./bin/Makefile tmp", shell=True)
+        subprocess.call("cp ./reference/* ./tmp/", shell=True)
+        subprocess.call("make " + testnames[x] + " -C ./tmp/ &> /dev/null", shell=True)
+        print('Running ' + testnames[x])
+        if hasInput:
+            subprocess.call("./tmp/" + testnames[x] + " > " + refpath[x], shell=True)
+        else:
+            subprocess.call("./tmp/" + testnames[x] + "  < " + 
                             inpath[x] +  " > " + refpath[x], shell=True)
+
+        subprocess.call("rm ./tmp/*", shell=True)
+        #print("cp " + cpppath[x] + " tmp")
+        #print("cp bin/Makefile .")
+        #print("make "+ testnames[x] + " -C tmp")
+        #print("rm temp")
+    
 # set up lists given
 def setupLists(testnames, inpath, cpppath, refpath, outpath, voutpath, numTests):
     ## setup lists
@@ -118,6 +192,7 @@ def checkMakefile(useMains):
     if not os.path.isfile('./bin/Makefile'):
         print('./bin/Makefile not found! Aborting.')
         exit(1)
+
 # check if dirs exist
 def checkDirs(useMains):
     if (useMains == True) and (not os.path.isdir('./cpp')):
@@ -142,17 +217,17 @@ def countTests(useMains):
     else:
         # counts # files in in/ (for ref comparision)
         out = subprocess.Popen("ls in | wc -l", stdout=subprocess.PIPE, stderr=subprocess.STDOUT , shell=True)
-    stdout = out.communicate()[0]
-    splitted = list(str(stdout))
+    splitted = list(str(out.communicate()[0]))
+    return countList(splitted)
 
-    # turn list back into number, max 99
-    if (len(splitted) == 6):
-        return int(splitted[2])
-    elif (len(splitted) == 7):
-        return int(splitted[2]) * 10 + int(splitted[3])
-    else:
-        print("Too many tests! Aborting.") # max = 99
-        exit(1)
+# turn list into number, max 999
+def countList(theList):
+    if (len(theList) == 6):
+        return int(theList[2])
+    elif (len(theList) == 7):
+        return int(theList[2]) * 10 + int(theList[3])
+    elif (len(theList) == 8):
+        return int(theList[2]) * 100 + int(theList[3]) * 10 + int(theList[2])
 
 def echo(input):
     print('echo \"' + input + '\"')
