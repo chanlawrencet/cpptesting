@@ -1,5 +1,7 @@
 {
-	"numTests": 1,
+	"instructions": "see README.md for instructions and options",
+	"numTests": 4,
 	"toDistribute": "test04",
+	"compile": true,
 	"execName": "money"
 }

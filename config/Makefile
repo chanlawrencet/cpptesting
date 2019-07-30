@@ -14,6 +14,12 @@ test01: test01.o Student.o
 test02: test02.o Student.o
 	${CXX} ${LDFLAGS} -o test02 test02.o Student.o
 
+test03: test03.o Student.o
+	${CXX} ${LDFLAGS} -o test03 test03.o Student.o
+
+test04: test04.o Student.o
+	${CXX} ${LDFLAGS} -o test04 test04.o Student.o
+
 main.o: main.cpp Student.h
 Student.o: Student.cpp
 

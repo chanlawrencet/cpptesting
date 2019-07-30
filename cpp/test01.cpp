@@ -6,5 +6,6 @@
 int main(){
     Student anna;
 
+    cout << "hello!" << endl;
     return 0;
 }
