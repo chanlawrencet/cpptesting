@@ -1,3 +1,6 @@
+// Lawrence Chan
+// Sample student program, class file
+
 #include "Student.h"
 
 // default constructor
