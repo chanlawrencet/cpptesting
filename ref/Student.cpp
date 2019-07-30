@@ -47,5 +47,5 @@ int Student::getAge(){
 
 Student::~Student(){
 	delete this->allocatedMem;
-	this->allocatedMem = nullptr;
+    this->allocatedMem = NULL;	
 };
