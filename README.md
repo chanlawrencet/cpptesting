@@ -50,3 +50,8 @@ Additionalrerequisites:
 ## Examples
 ### Type 1 - functional test example
 In place currently is a type 1 example, a functional test. The reference program is stored in `./ref`, and is a simple class-based program with a `Student` class. I included a few functions that would cause memory leaks (that will be detected by the testing program). 
+
+
+## Troubleshooting
+* Programs aren't being generated to create reference output!
+  * Check your `./config/Makefile` to make sure all targets are accounted for
