@@ -24,6 +24,7 @@ The purpose of this program is to make a simple input and output testing for stu
   |-tests.py **
 ```
 _`*` are optional files_
+
 _`**` are generated files_
 
 ## Two types and setup
