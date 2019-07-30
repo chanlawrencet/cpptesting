@@ -92,7 +92,7 @@ def init():
     numTests = countTests(useMains) # count num tests
     checkTests(numTests) # make sure there are tests
     checkMakefile(useMains) # if using mains, check if Makefile exists
-    checkReferences(useMains, executable) # if using mains, check bin/ref, else, check reference
+    checkReferences(useMains, executable) # if using mains, check config/ref, else, check reference
 
     ## set up directories
     dirsToMake = ['ref', 'tmp']
@@ -122,12 +122,12 @@ def checkReferences(useMains, executable):
     else:
         print("executable", executable)
         if not os.path.isfile('./reference/' + executable):
-            print('./bin/' + executable + ' not found! Aborting.')
+            print('./config/' + executable + ' not found! Aborting.')
             exit(1)
 
 # getting info from config file
 def getConfig(inputs):
-    file = open('./bin/config',"r")
+    file = open('./config/config',"r")
     config = file.read().splitlines()
     for line in config:
         theLine = line.split('=')
@@ -145,7 +145,7 @@ def mainsRef(numTests, cpppath, testnames, inpath, refpath, hasInput):
     for x in range(0, numTests):
         print('Compiling ' + testnames[x])
         subprocess.call("cp " + cpppath[x] + " tmp", shell=True)
-        subprocess.call("cp ./bin/Makefile tmp", shell=True)
+        subprocess.call("cp ./config/Makefile tmp", shell=True)
         subprocess.call("cp ./reference/* ./tmp/", shell=True)
         subprocess.call("make " + testnames[x] + " -C ./tmp/ &> /dev/null", shell=True)
         print('Running ' + testnames[x])
@@ -157,7 +157,7 @@ def mainsRef(numTests, cpppath, testnames, inpath, refpath, hasInput):
 
         subprocess.call("rm ./tmp/*", shell=True)
         #print("cp " + cpppath[x] + " tmp")
-        #print("cp bin/Makefile .")
+        #print("cp config/Makefile .")
         #print("make "+ testnames[x] + " -C tmp")
         #print("rm temp")
     
@@ -175,8 +175,8 @@ def setupLists(testnames, inpath, cpppath, refpath, outpath, voutpath, numTests)
 
 # check if config exists
 def checkConfig():
-    if not os.path.isfile('./bin/config'):
-        print('./bin/config not found! Aborting.')
+    if not os.path.isfile('./config/config'):
+        print('./config/config not found! Aborting.')
         exit(1)
     return
 # convert nonzero int into string with leading zero
@@ -185,12 +185,12 @@ def addZero(inputNum):
         return "0" + str(inputNum)
     else:
         return str(inputNum)
-# check if /bin/Makefile exists, if necessary
+# check if /config/Makefile exists, if necessary
 def checkMakefile(useMains):
     if useMains == False:
         return
-    if not os.path.isfile('./bin/Makefile'):
-        print('./bin/Makefile not found! Aborting.')
+    if not os.path.isfile('./config/Makefile'):
+        print('./config/Makefile not found! Aborting.')
         exit(1)
 
 # check if dirs exist
