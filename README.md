@@ -5,21 +5,26 @@ The purpose of this program is to make a simple input and output testing for stu
 ## File Structure
 ```
 |-testGen.py (generates grading dir)
-|-tests.py
-|-config.json
+|-tests.py (testing program)
+|-config/
+  |-config.json
+  |-Makefile *
+|-in/ (input files)
 |-ref/
   |-files needed for compilation
-  |-Makefile
-  |-program.ref
-|-grading/
-  |-input/ (input for files)
-  |-ref/ (reference output)
-  |-tests.py
-|-distribute/
-  |-input/ (1 test)
-  |-ref/ (1 test)
-  |-tests.py
+  |-reference executable *
+  |-Makefile *
+|-grading/ **
+  |-in/ (input files) **
+  |-ref/ (reference output) **
+  |-tests.py **
+|-distribute/ **
+  |-input/ (1 test) **
+  |-ref/ (1 test) **
+  |-tests.py **
 ```
+_`*` are optional files_
+_`**` are generated files_
 
 ## Two types and setup
 There are two types of tests available to be generated, with baseline prerequsities:
