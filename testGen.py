@@ -99,9 +99,10 @@ def check_tests():
     if len(files) != configs['numTests']:
         raise RuntimeError(str(len(files)) + ' files in ./in found; ' + str(configs['numTests']) + ' expected.')
 
-    files = next(os.walk('./cpp/'))[2]
-    if len(files) != configs['numTests']:
-        raise RuntimeError(str(len(files)) + ' files in ./cpp found; ' + str(configs['numTests']) + ' expected.')
+    if configs['compile']:
+        files = next(os.walk('./cpp/'))[2]
+        if len(files) != configs['numTests']:
+            raise RuntimeError(str(len(files)) + ' files in ./cpp found; ' + str(configs['numTests']) + ' expected.')
 
 
 def make_reference_type_1():
@@ -141,7 +142,7 @@ def make_reference_type_2():
         call('cp ../in/* .')
         call('cp ../ref/* .')
         print(' -' + to_string_default(test_num) + ' - running', end='\r', flush=True)
-        call('./' + to_string_default(test_num) + ' < ' + to_string(test_num, '.in') + ' > ' + to_string(test_num, '.ref'))
+        call('./' + configs['execName'] + ' < ' + to_string(test_num, '.in') + ' > ' + to_string(test_num, '.ref'))
         call('cp ' + to_string(test_num, '.ref') + ' ../grading/ref/')
         call('rm *')
         print(' -' + to_string_default(test_num) + ' - done ✓   ', end='\n')
