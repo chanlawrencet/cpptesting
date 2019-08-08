@@ -30,6 +30,16 @@ def main():
 
     set_tests_to_run()
 
+    run_tests()
+
+def run_tests():
+    global tests_to_run
+    for test in tests_to_run:
+        if os.path.isdir('./.temp'):
+            print('Error: temp dir exists! Delete if can.')
+            exit(1)
+        call('mkdir temp')
+
 
     # print(num_tests, configs, tests_to_run)
 
@@ -38,11 +48,6 @@ def set_tests_to_run():
     if len(tests_to_run) == 0:
         for i in range (1, get_num_tests() + 1):
             tests_to_run.append(to_string_default(i))
-
-    print(tests_to_run)
-    exit(1)
-
-# def run_tests():
 
 
 def parse_configs():
@@ -67,7 +72,7 @@ def compile_program():
                 results['compile']['errors'] = regex_find_errors
 
     if not os.path.isfile('./' + str(configs['makeExec'])):
-        print('Executable not made! Check make logs (make.logs)')
+        print('Error: Executable not made! Check make logs (make.logs)')
         print(results)
         exit(1)
 
