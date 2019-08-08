@@ -1,1 +1,0 @@
-clang++ -g3 -o exampleProgram main.o Student.o
