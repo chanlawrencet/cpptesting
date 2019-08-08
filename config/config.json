@@ -2,5 +2,6 @@
 	"instructions": "see README.md for instructions and options",
 	"numTests": 4,
 	"toDistribute": "test04",
-	"compile": true
+	"compile": true,
+	"makeExec" : "exampleProgram"
 }
