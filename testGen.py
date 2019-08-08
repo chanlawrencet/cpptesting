@@ -96,9 +96,9 @@ def check_prerequisites():
 
 def generate_folders():
     call('rm -rf grading')
-    call('rm -rf temp')
+    call('rm -rf .temp')
     call('rm -rf distribute')
-    call('mkdir temp')
+    call('mkdir .temp')
     call('mkdir grading')
     call('mkdir grading/in')
     call('mkdir grading/ref')
@@ -126,9 +126,9 @@ def check_tests():
 
 def make_reference_type_1():
     global configs
-    os.chdir('temp')
+    os.chdir('.temp')
 
-    # in temp dir
+    # in .temp dir
 
     for test_num in range(1, configs['numTests'] + 1):
         call('cp ../in/* .')
@@ -147,15 +147,15 @@ def make_reference_type_1():
     os.chdir('..')
 
     # back to root dir
-    call('rm -rf temp')
+    call('rm -rf .temp')
     call('cp ./in/* ./grading/in/')
 
 
 def make_reference_type_2():
     global configs
-    os.chdir('temp')
+    os.chdir('.temp')
 
-    # in temp dir
+    # in .temp dir
     for test_num in range(1, configs['numTests'] + 1):
         call('cp ../in/* .')
         call('cp ../ref/* .')
@@ -167,7 +167,7 @@ def make_reference_type_2():
     os.chdir('..')
 
     # back to root dir
-    call('rm -rf temp')
+    call('rm -rf .temp')
     call('cp ./in/* ./grading/in/')
     call('cp tests.py ./grading/')
 
