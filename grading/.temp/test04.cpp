@@ -12,6 +12,5 @@ int main(){
     nancy.setAge(age);
     cout << nancy.getName() << endl;
     cout << nancy.getAge() << endl;
-    nancy.makeSegfault();
     return 0;
 }

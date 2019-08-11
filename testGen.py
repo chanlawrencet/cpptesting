@@ -44,6 +44,15 @@ def main():
     copy_tests()
     print('Copying tests ✓')
 
+    if 'compile' in configs:
+        if configs['compile']:
+            print('Copying type1 files', end='\r')
+            call('mkdir grading/cpp')
+            call('cp ./cpp/* ./grading/cpp')
+            call('cp ./config/Makefile ./grading/Makefile')
+            call('mv ./grading/Makefile ./grading/Makefile_test')
+            print('Copying type1 files ✓', end='\r')
+
     if 'toDistribute' in configs:
         print('Making distribution test (' + configs['toDistribute'] + ')', end='\r')
         make_distribute(configs['toDistribute'])
@@ -51,7 +60,6 @@ def main():
 
     print()
     print('All files made, found in ./grading.')
-
 def copy_tests():
     call('cp tests.py ./grading/')
 

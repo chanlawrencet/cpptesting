@@ -9,6 +9,5 @@ int main(){
     cin >> age;
     nancy.setAge(age);
     cout << nancy.getAge() << endl;
-    nancy.allocateUnfreedMem();
     return 0;
 }
