@@ -1,2 +1,0 @@
-clang++ -g3 -Wall -Wextra -std=c++11   -c -o test01.o test01.cpp
-clang++ -g3 -o test01 test01.o

@@ -192,13 +192,17 @@ def make_reference_type_2():
 def make_distribute(toDistribute):
     call('mkdir distribute')
     call('mkdir distribute/ref')
+    call('mkdir distribute/cpp')
     call('mkdir distribute/in')
     check_file('./grading/ref/' + toDistribute + '.ref')
     call('cp ./grading/ref/' + toDistribute + '.ref distribute/ref')
     check_file('./grading/in/' + toDistribute + '.in')
     call('cp ./grading/in/' + toDistribute + '.in distribute/in')
-    call('cp ./config/Makefile ./grading/Makefile')
-    call('mv ./grading/Makefile ./grading/Makefile_test')
+    check_file('./grading/cpp/' + toDistribute + '.cpp')
+    call('cp ./grading/cpp/' + toDistribute + '.cpp distribute/cpp/')
+
+    call('cp ./config/Makefile ./distribute/Makefile')
+    call('mv ./distribute/Makefile ./distribute/Makefile_test')
     call('cp tests.py ./distribute/')
     make_JSON_distribute()
 

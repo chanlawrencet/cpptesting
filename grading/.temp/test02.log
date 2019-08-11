@@ -1,2 +1,0 @@
-clang++ -g3 -Wall -Wextra -std=c++11   -c -o test02.o test02.cpp
-make: *** No rule to make target `Student.cpp', needed by `Student.o'.  Stop.
