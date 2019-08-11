@@ -1,13 +1,13 @@
-// gettter / setter, age
+// gettter / setter, name
 
 #include <iostream>
 #include "Student.h"
 
 int main(){
     Student nancy;
-    int age;
-    cin >> age;
-    nancy.setAge(age);
-    cout << nancy.getAge() << endl;
+    string name;
+    cin >> name;
+    nancy.setName(name);
+    cout << nancy.getName() << endl;
     return 0;
 }

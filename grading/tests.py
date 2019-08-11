@@ -44,6 +44,30 @@ def main():
 
     test_summary()
 
+def leak_sin_plu(num):
+    if num == 1:
+        return 'leak'
+    else:
+        return 'leaks'
+
+def warning_sin_plu(num):
+    if num == 1:
+        return 'warning'
+    else:
+        return 'warnings'
+
+def byte_sin_plu(num):
+    if num == 1:
+        return 'byte'
+    else:
+        return 'bytes'
+
+def error_sin_plu(num):
+    if num == 1:
+        return 'error'
+    else:
+        return 'errors'
+
 
 def test_summary():
     global results
@@ -57,6 +81,7 @@ def test_summary():
         num_warnings = results['tests'][test]['warnings']
         num_memLeaks = results['tests'][test]['memLeaks']
         num_memErrors = results['tests'][test]['memErrors']
+        made_executable = results['tests'][test]['madeExecutable']
 
         sys.stdout.write(RED)
         if num_errors != 0:
@@ -73,7 +98,10 @@ def test_summary():
         if num_memErrors != 0:
             print('\t' + str(num_memErrors) + ' memory ' + error_sin_plu(num_memErrors) + ' ✘')
 
-        if not failed:
+        if not failed and not made_executable:
+            print('\tFailed '+ test +' ✘')
+
+        if not failed and made_executable:
             sys.stdout.write(GREEN)
             print('\tPassed '+ test +' ✓')
         sys.stdout.write(RESET)
@@ -104,6 +132,7 @@ def run_tests():
         results['tests'][test]['memErrors'] = 0 # 0 == success
         results['tests'][test]['output'] = True     # true == success
         results['tests'][test]['segfault'] = False     # false == success
+        results['tests'][test]['madeExecutable'] = False     # false == success
         call('cp ../*.cpp .')
         call('cp ../*.h .')
         call('cp ../cpp/' + append_suffix(test, '.cpp') + ' .')
@@ -120,6 +149,7 @@ def run_tests():
             print('Error: Executable not made! Aborting ' + test + '.')
             sys.stdout.write(RESET)
         else:
+            results['tests'][test]['madeExecutable'] = True
             run_program_specified(test)
             sys.stdout.write(YELLOW)
             print('Comparing ' + test + '...', end='\r')
@@ -297,30 +327,7 @@ def print_valigrnd_result(test):
         print('\tErrors ' + test + '... ✓')
 
 ############## Utilities
-def leak_sin_plu(num):
-    if num == 1:
-        return 'leak'
-    else:
-        return 'leaks'
 
-def warning_sin_plu(num):
-    if num == 1:
-        return 'warning'
-    else:
-        return 'warnings'
-
-def byte_sin_plu(num):
-    if num == 1:
-        return 'byte'
-    else:
-        return 'bytes'
-
-def error_sin_plu(num):
-    if num == 1:
-        return 'error'
-    else:
-        return 'errors'
-        
 def set_tests_to_run():
     global tests_to_run
     if len(tests_to_run) == 0:

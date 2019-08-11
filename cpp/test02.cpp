@@ -1,13 +1,11 @@
-// gettter / setter, name
+// student default constructor
 
 #include <iostream>
 #include "Student.h"
 
 int main(){
-    Student nancy;
-    string name;
-    cin >> name;
-    nancy.setName(name);
-    cout << nancy.getName() << endl;
+    Student anna;
+
+    cout << "hello!" << endl;
     return 0;
 }

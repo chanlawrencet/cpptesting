@@ -1,11 +1,9 @@
 // student default constructor
 
 #include <iostream>
-#include "Student.h"
+using namespace std;
 
 int main(){
-    Student anna;
-
     cout << "hello!" << endl;
     return 0;
 }
