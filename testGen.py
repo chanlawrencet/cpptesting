@@ -10,8 +10,8 @@ configs = {}
 
 
 def main():
+    print('options: -clean')
     parse_args()
-
     print('Parsing configs', end='\r')
     parse_configs()
     print('Parsing configs ✓')
@@ -36,13 +36,40 @@ def main():
             make_reference_type_2()
     print('Made reference ✓')
 
+    print('Making config JSON', end='\r')
+    make_JSON()
+    print('Making config JSON ✓')
+
+    print('Copying tests', end='\r')
+    copy_tests()
+    print('Copying tests ✓')
+
+    if 'compile' in configs:
+        if configs['compile']:
+            print('Copying type1 files', end='\r')
+            call('mkdir grading/cpp')
+            call('cp ./cpp/* ./grading/cpp')
+            call('cp ./config/Makefile ./grading/Makefile')
+            call('mv ./grading/Makefile ./grading/Makefile_test')
+            print('Copying type1 files ✓', end='\r')
+
     if 'toDistribute' in configs:
         print('Making distribution test (' + configs['toDistribute'] + ')', end='\r')
         make_distribute(configs['toDistribute'])
         print('Making distribution test (' + configs['toDistribute'] + ') ✓')
+
     print()
     print('All files made, found in ./grading.')
+def copy_tests():
+    call('cp tests.py ./grading/')
 
+def make_JSON():
+    toJsonify = {
+        "makeExec": str(configs['makeExec'])
+    }
+
+    with open('./grading/config.json', 'w') as file:
+        json.dump(toJsonify, file, indent=4)
 
 def parse_args():
     if len(sys.argv) > 1:
@@ -77,9 +104,9 @@ def check_prerequisites():
 
 def generate_folders():
     call('rm -rf grading')
-    call('rm -rf temp')
+    call('rm -rf .temp')
     call('rm -rf distribute')
-    call('mkdir temp')
+    call('mkdir .temp')
     call('mkdir grading')
     call('mkdir grading/in')
     call('mkdir grading/ref')
@@ -107,9 +134,9 @@ def check_tests():
 
 def make_reference_type_1():
     global configs
-    os.chdir('temp')
+    os.chdir('.temp')
 
-    # in temp dir
+    # in .temp dir
 
     for test_num in range(1, configs['numTests'] + 1):
         call('cp ../in/* .')
@@ -128,16 +155,15 @@ def make_reference_type_1():
     os.chdir('..')
 
     # back to root dir
-    call('rm -rf temp')
+    call('rm -rf .temp')
     call('cp ./in/* ./grading/in/')
-    call('cp tests.py ./grading/')
 
 
 def make_reference_type_2():
     global configs
-    os.chdir('temp')
+    os.chdir('.temp')
 
-    # in temp dir
+    # in .temp dir
     for test_num in range(1, configs['numTests'] + 1):
         call('cp ../in/* .')
         call('cp ../ref/* .')
@@ -149,7 +175,7 @@ def make_reference_type_2():
     os.chdir('..')
 
     # back to root dir
-    call('rm -rf temp')
+    call('rm -rf .temp')
     call('cp ./in/* ./grading/in/')
     call('cp tests.py ./grading/')
 
@@ -186,9 +212,10 @@ def to_string(test_num, suffix):
 
 
 def delete_folders():
-    call('rm -rf grading')
-    call('rm -rf temp')
-    call('rm -rf distribute')
+    print('delete folders')
+    # call('rm -rf grading')
+    # call('rm -rf temp')
+    # call('rm -rf distribute')
 
 
 def check_file(file_path):

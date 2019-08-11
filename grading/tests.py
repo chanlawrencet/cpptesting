@@ -44,30 +44,6 @@ def main():
 
     test_summary()
 
-def leak_sin_plu(num):
-    if num == 1:
-        return 'leak'
-    else:
-        return 'leaks'
-
-def warning_sin_plu(num):
-    if num == 1:
-        return 'warning'
-    else:
-        return 'warnings'
-
-def byte_sin_plu(num):
-    if num == 1:
-        return 'byte'
-    else:
-        return 'bytes'
-
-def error_sin_plu(num):
-    if num == 1:
-        return 'error'
-    else:
-        return 'errors'
-
 
 def test_summary():
     global results
@@ -321,7 +297,30 @@ def print_valigrnd_result(test):
         print('\tErrors ' + test + '... ✓')
 
 ############## Utilities
+def leak_sin_plu(num):
+    if num == 1:
+        return 'leak'
+    else:
+        return 'leaks'
 
+def warning_sin_plu(num):
+    if num == 1:
+        return 'warning'
+    else:
+        return 'warnings'
+
+def byte_sin_plu(num):
+    if num == 1:
+        return 'byte'
+    else:
+        return 'bytes'
+
+def error_sin_plu(num):
+    if num == 1:
+        return 'error'
+    else:
+        return 'errors'
+        
 def set_tests_to_run():
     global tests_to_run
     if len(tests_to_run) == 0:
