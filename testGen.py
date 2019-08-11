@@ -63,6 +63,15 @@ def main():
 def copy_tests():
     call('cp tests.py ./grading/')
 
+
+def make_JSON_distribute():
+    toJsonify = {
+        "makeExec": str(configs['makeExec'])
+    }
+
+    with open('./distribute/config.json', 'w') as file:
+        json.dump(toJsonify, file, indent=4)
+
 def make_JSON():
     toJsonify = {
         "makeExec": str(configs['makeExec'])
@@ -188,7 +197,10 @@ def make_distribute(toDistribute):
     call('cp ./grading/ref/' + toDistribute + '.ref distribute/ref')
     check_file('./grading/in/' + toDistribute + '.in')
     call('cp ./grading/in/' + toDistribute + '.in distribute/in')
+    call('cp ./config/Makefile ./grading/Makefile')
+    call('mv ./grading/Makefile ./grading/Makefile_test')
     call('cp tests.py ./distribute/')
+    make_JSON_distribute()
 
 
 # Utilities #
