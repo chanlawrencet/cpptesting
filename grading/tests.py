@@ -38,18 +38,23 @@ def main():
 def test_summary():
     global results
     global tests_to_run
+    print('Test Summary:')
     for test in tests_to_run:
         print(test)
         failed = False
         if results['tests'][test]['errors'] != 0:
-            print('\tErrors ✘')
+            print('\t' + str(results['tests'][test]['errors']) + ' errors ✘ (did not compile)')
             failed = True
         if results['tests'][test]['warnings'] != 0:
-            print('\tWarnings ✘')
+            print('\t' + str(results['tests'][test]['warnings']) + ' warnings ✘')
             failed = True
         if not results['tests'][test]['output']:
             print('\tOutput ✘')
             failed = True
+        if results['tests'][test]['memLeaks'] != 0:
+            print('\t' + str(results['tests'][test]['memLeaks']) + ' bytes definitely lost ✘')
+        if results['tests'][test]['memErrors'] != 0:
+            print('\t' + str(results['tests'][test]['memErrors']) + ' memory errors ✘')
 
         if not failed:
             print('\tPassed '+ test +' ✓')
@@ -73,13 +78,14 @@ def run_tests():
     os.chdir('.temp')
 
     for test in tests_to_run:
-        print('~~~~~~~~~~~~~~~~~~' + test + '~~~~~~~~~~~~~~~~~~')
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~'+ test +'~~~~~~~~~~~~~~~~~~~~~~~~~')
         results['tests'][test] = dict()
-        results['tests'][test]['warnings'] = dict()
-        results['tests'][test]['errors'] = dict()
-        results['tests'][test]['memLeaks'] = False  # false == success
-        results['tests'][test]['memErrors'] = False # false == success
+        results['tests'][test]['warnings'] = 0
+        results['tests'][test]['errors'] = 0
+        results['tests'][test]['memLeaks'] = 0  # 0 == success
+        results['tests'][test]['memErrors'] = 0 # 0 == success
         results['tests'][test]['output'] = True     # true == success
+        results['tests'][test]['segfault'] = False     # false == success
         call('cp ../*.cpp .')
         call('cp ../*.h .')
         call('cp ../cpp/' + append_suffix(test, '.cpp') + ' .')
@@ -87,96 +93,42 @@ def run_tests():
         call('cp ../Makefile_test' + ' .')
         print('Compiling ' + test + '...', end='\r')
         compile_program_specified(test)
-        if results['tests'][test]['warnings'] == 0 and results['tests'][test]['errors'] == 0:
-            print('Compiling ' + test + '... ✓')
-        else:
-            print('Compiling ' + test + '... ✘')
-        print('Running ' + test + '...', end='\r')
-        run_program_specified(test)
-        print('Running ' + test + '... ✓')
-        print('Comparing ' + test + '...', end='\r')
-        compare_output(test)
-        
-        if not results['tests'][test]['output']:
-            print('Comparing ' + test + '... ✓')
-        else:
-            print('Comparing ' + test + '... ✘')
+        print_compile_result(test)
 
-
-        print('Valgrind ' + test + '...', end='\r')
-        check_memory(test)
-        if results['tests'][test]['memLeaks'] or results['tests'][test]['memErrors']:
-            print('Valgrind ' + test + '... ✘')
+        if not os.path.isfile('./' + test):
+            print('Error: Executable not made! Aborting ' + test + '.')
         else:
-            print('Valgrind ' + test + '... ✓')
+            print('Running ' + test + '...', end='\r')
+            run_program_specified(test)
+            print('Running ' + test + '... ✓')
+            print('Comparing ' + test + '...', end='\r')
+            compare_output(test)
+            
+            if results['tests'][test]['output']:
+                print('Comparing ' + test + '... ✓')
+            else:
+                print('Comparing ' + test + '... ✘')
+                print_compare_failure(test)
 
-        if  results['tests'][test]['memLeaks']:
-            print('\tLeaks ' + test + '... ✘')
-        else:
-            print('\tLeaks ' + test + '... ✓')
+            print('Valgrind ' + test + '...', end='\r')
+            check_memory(test)
+            print_valigrnd_result(test)
 
-        if  results['tests'][test]['memErrors']:
-            print('\tErrors ' + test + '... ✘')
-        else:
-            print('\tErrors ' + test + '... ✓')
-
-        
-        print()
         print()
 
     os.chdir('..')
     # print(num_tests, configs, tests_to_run)
 
-def check_memory(test):
-    global results
-    valgrind_file = '../vout/' + append_suffix(test, '.vout')
-    with open(valgrind_file, 'r') as valgrind_logs:
-        for line in valgrind_logs:
-            regex_find_issues = re.findall(r"==[0-9]*== All heap blocks were freed -- no leaks are possible", line)
-            regex_find_errors = re.findall(r"==[0-9]*== ERROR SUMMARY: (\d*) errors from (\d*) contexts", line) 
-            regex_find_definitely_lost = re.findall(r"==[0-9]*==    definitely lost: (\d{1,3}(?:,\d{3})*) bytes in (\d{1,3}(?:,\d{3})*) blocks", line)
-            regex_find_indirectly_lost = re.findall(r"==[0-9]*==    indirectly lost: (\d{1,3}(?:,\d{3})*) bytes in (\d{1,3}(?:,\d{3})*) blocks", line)
-            regex_find_possibly_lost = re.findall(r"==[0-9]*==    possibly lost: (\d{1,3}(?:,\d{3})*) bytes in (\d{1,3}(?:,\d{3})*) blocks", line)
-
-
-            print(regex_find_issues)
-            print(regex_find_errors)
-            print(regex_find_definitely_lost)
-            print(regex_find_in_use)
-            print(regex_find_still_reachable)
-
-def compare_output(test):
-    global results
-
-    output_file = '../out/' + append_suffix(test, '.out')
-    reference_file = '../ref/' + append_suffix(test, '.ref')
-    diff_file = '../diff/' + append_suffix(test, '.diff')
-    call('touch ' + diff_file)
-    call('diff -EZBwB ' + output_file + ' ' + reference_file + ' &> ' + diff_file)
-
-    if os.stat(diff_file).st_size == 0:
-        results['tests'][test]['output'] = False
-
-
+############## Run programs
+# Actually runs valgrind inline (so no need to do it twice!)
 def run_program_specified(test):
     valgrind_file = '../vout/' + append_suffix(test, '.vout')
     output_file = '../out/' + append_suffix(test, '.out')
     call('valgrind --log-file="' + valgrind_file + '" ' + test + ' < ' + append_suffix(test, '.in') + ' &> ' + output_file)
 
 
-def set_tests_to_run():
-    global tests_to_run
-    if len(tests_to_run) == 0:
-        for i in range (1, get_num_tests() + 1):
-            tests_to_run.append(to_string_default(i))
 
-
-def parse_configs():
-    global configs
-    check_file('./config.json')
-    with open('./config.json') as jsonFile:
-        configs = json.load(jsonFile)
-
+############## Compile programs
 
 # compiles a program based on a specific test (name of the program), with a specified filename (our custom makefile)
 # makes test.log in curr directory
@@ -191,14 +143,12 @@ def compile_program_specified(test):
             regex_find_warnings = re.findall(r"(\d*) warnings generated.", line)
             regex_find_errors = re.findall(r"(\d*) errors generated.", line)
             if len(regex_find_warnings) > 0:
-                print(regex_find_warnings[0] + ' warnings! Check make logs (test+.log)')
-                results['tests'][test]['warnings'] = regex_find_warnings
+                print(regex_find_warnings[0] + ' warnings! Check make logs (logs/' + append_suffix(test, '.log)'))
+                results['tests'][test]['warnings'] = regex_find_warnings[0]
             if len(regex_find_errors) > 0:
-                print(regex_find_errors[0] + ' errors! Check make logs (test+.log)')
-                results['tests'][test]['errors'] = regex_find_errors
+                print(regex_find_errors[0] + ' errors! Check make logs (logs/' + append_suffix(test, '.log)'))
+                results['tests'][test]['errors'] = regex_find_errors[0]
 
-    if not os.path.isfile('./' + test):
-        print('Error: Executable not made! Check make logs (make.log)')
     call('cp ' + append_suffix(test, '.log') + ' ../logs/' + append_suffix(test, '.log'))
 
 
@@ -211,16 +161,110 @@ def compile_program():
             regex_find_warnings = re.findall(r"(\d*) warnings generated.", line)
             regex_find_errors = re.findall(r"(\d*) errors generated.", line)
             if len(regex_find_warnings) > 0:
-                print(regex_find_warnings[0] + ' warnings! Check make logs (test+.log)')
+                print(regex_find_warnings[0] + ' warnings! Check make logs (logs/' + append_suffix(test, '.log)'))
                 results['compile']['warnings'] = regex_find_warnings
             if len(regex_find_errors) > 0:
-                print(regex_find_errors[0] + ' errors! Check make logs (test+.log)')
+                print(regex_find_errors[0] + ' errors! Check make logs (logs/' + append_suffix(test, '.log)'))
                 results['compile']['errors'] = regex_find_errors
 
     if not os.path.isfile('./' + str(configs['makeExec'])):
         print('Error: Executable not made! Check make logs (make.log)')
         exit(1)
 
+############## Checkers / Verifiers
+
+def check_memory(test):
+    global results
+    valgrind_file = '../vout/' + append_suffix(test, '.vout')
+    with open(valgrind_file, 'r') as valgrind_logs:
+        for line in valgrind_logs:
+            regex_find_issues = re.findall(r"==[0-9]*== All heap blocks were freed -- no leaks are possible", line)
+            regex_find_errors = re.findall(r"==[0-9]*== ERROR SUMMARY: (\d*) errors from (\d*) contexts", line) 
+            regex_find_definitely_lost = re.findall(r"==[0-9]*==    definitely lost: (\d{1,3}(?:,\d{3})*) bytes in (\d{1,3}(?:,\d{3})*) blocks", line)
+            regex_find_indirectly_lost = re.findall(r"==[0-9]*==    indirectly lost: (\d{1,3}(?:,\d{3})*) bytes in (\d{1,3}(?:,\d{3})*) blocks", line)
+            regex_find_possibly_lost = re.findall(r"==[0-9]*==    possibly lost: (\d{1,3}(?:,\d{3})*) bytes in (\d{1,3}(?:,\d{3})*) blocks", line)
+
+            for num in regex_find_definitely_lost:
+                (a, b) = num
+                if a != '0':
+                    results['tests'][test]['memLeaks'] = int(a)
+
+            for num in regex_find_errors:
+                (a, b) = num
+                if a != '0':
+                    results['tests'][test]['memErrors'] = int(a)
+
+
+
+def compare_output(test):
+    global results
+
+    output_file = '../out/' + append_suffix(test, '.out')
+    reference_file = '../ref/' + append_suffix(test, '.ref')
+    diff_file = '../diff/' + append_suffix(test, '.diff')
+    call('touch ' + diff_file)
+    call('diff -EZBwB ' + output_file + ' ' + reference_file + ' &> ' + diff_file)
+
+    if os.stat(diff_file).st_size != 0:
+        results['tests'][test]['output'] = False
+
+############## Print Results
+        
+def print_compile_result(test):
+    if results['tests'][test]['warnings'] == 0 and results['tests'][test]['errors'] == 0:
+        print('Compiling ' + test + '... warnings ✓ errors ✓')
+    elif results['tests'][test]['warnings'] != 0 and results['tests'][test]['errors'] == 0:
+        print('Compiling ' + test + '... warnings ✘ errors ✓')
+    elif results['tests'][test]['warnings'] == 0 and results['tests'][test]['errors'] != 0:
+        print('Compiling ' + test + '... warnings ✓ errors ✘')
+    else:
+        print('Compiling ' + test + '... warnings ✘ errors ✘')
+
+def print_compare_failure(test):
+    output_file = '../out/' + append_suffix(test, '.out')
+    reference_file = '../ref/' + append_suffix(test, '.ref')
+    diff_file = '../diff/' + append_suffix(test, '.diff')
+    print('            ~~~expected (' + 'ref/' + append_suffix(test, '.ref)') + '~~~')
+    call('head -5 ' + reference_file)
+    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    print('             ~~~actual (' + 'out/' + append_suffix(test, '.out)') + '~~~')
+    call('head -5 ' + output_file)
+    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    print('              ~~~diff (' + 'diff/' + append_suffix(test, '.diff)') + '~~~')
+    call('head -5 ' + diff_file)
+    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
+def print_valigrnd_result(test):
+    global results
+    if results['tests'][test]['memLeaks'] != 0 or results['tests'][test]['memErrors'] != 0:
+        print('Valgrind ' + test + '... ✘')
+    else:
+        print('Valgrind ' + test + '... ✓')
+
+    if  results['tests'][test]['memLeaks'] != 0:
+        print('\tLeaks ' + test + '... ✘ (' + str(results['tests'][test]['memLeaks']) + ' bytes)')
+    else:
+        print('\tLeaks ' + test + '... ✓')
+
+    if  results['tests'][test]['memErrors'] != 0:
+        print('\tErrors ' + test + '... ✘ (' + str(results['tests'][test]['memErrors']) + ' errors)')
+    else:
+        print('\tErrors ' + test + '... ✓')
+
+############## Utilities
+
+def set_tests_to_run():
+    global tests_to_run
+    if len(tests_to_run) == 0:
+        for i in range (1, get_num_tests() + 1):
+            tests_to_run.append(to_string_default(i))
+
+
+def parse_configs():
+    global configs
+    check_file('./config.json')
+    with open('./config.json') as jsonFile:
+        configs = json.load(jsonFile)
 
 def parse_args():
     global configs

@@ -7,7 +7,7 @@ int main(){
     Student nancy;
     string name;
     cin >> name;
-    nancy.setName(name);
+    nancy.setNaasdlfjksa;dme(name);
     cout << nancy.getName() << endl;
     return 0;
 }
