@@ -1,0 +1,13 @@
+clang++ -g3 -Wall -Wextra -std=c++11   -c -o test01.o test01.cpp
+clang++ -g3 -Wall -Wextra -std=c++11   -c -o Student.o Student.cpp
+Student.cpp:24:2: warning: array index 12312313 is past the end of the array (which contains 5 elements) [-Warray-bounds]
+        ray[12312313] = 5; // should make make segfault
+        ^   ~~~~~~~~
+Student.cpp:23:2: note: array 'ray' declared here
+        int ray[5];
+        ^
+Student.cpp:29:7: warning: unused variable 'number' [-Wunused-variable]
+        int *number = new int;
+             ^
+2 warnings generated.
+clang++ -g3 -o test01 test01.o Student.o

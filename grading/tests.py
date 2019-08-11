@@ -4,6 +4,16 @@ import subprocess
 import json
 import re
 
+
+RED   = "\033[1;31m"  
+GREEN = "\033[0;32m"
+YELLOW = "\033[0;33m"
+BLUE  = "\033[1;34m"
+CYAN  = "\033[1;36m"
+RESET = "\033[0;0m"
+BOLD    = "\033[;1m"
+REVERSE = "\033[;7m"
+
 tests_to_run = []
 configs = dict()
 configs['outputOnly'] = False
@@ -34,31 +44,63 @@ def main():
 
     test_summary()
 
+def leak_sin_plu(num):
+    if num == 1:
+        return 'leak'
+    else:
+        return 'leaks'
+
+def warning_sin_plu(num):
+    if num == 1:
+        return 'warning'
+    else:
+        return 'warnings'
+
+def byte_sin_plu(num):
+    if num == 1:
+        return 'byte'
+    else:
+        return 'bytes'
+
+def error_sin_plu(num):
+    if num == 1:
+        return 'error'
+    else:
+        return 'errors'
+
 
 def test_summary():
     global results
     global tests_to_run
+    print('~~~~~~~~~~~~~~~~~~~~testing complete~~~~~~~~~~~~~~~~~~~~')
     print('Test Summary:')
     for test in tests_to_run:
         print(test)
         failed = False
-        if results['tests'][test]['errors'] != 0:
-            print('\t' + str(results['tests'][test]['errors']) + ' errors ✘ (did not compile)')
+        num_errors = results['tests'][test]['errors']
+        num_warnings = results['tests'][test]['warnings']
+        num_memLeaks = results['tests'][test]['memLeaks']
+        num_memErrors = results['tests'][test]['memErrors']
+
+        sys.stdout.write(RED)
+        if num_errors != 0:
+            print('\t' + str(num_errors) + ' ' + error_sin_plu(num_memErrors) + ' ✘ (did not compile)')
             failed = True
-        if results['tests'][test]['warnings'] != 0:
-            print('\t' + str(results['tests'][test]['warnings']) + ' warnings ✘')
+        if num_warnings != 0:
+            print('\t' + str(num_warnings) + ' ' + warning_sin_plu(num_warnings) + ' ✘')
             failed = True
         if not results['tests'][test]['output']:
             print('\tOutput ✘')
             failed = True
-        if results['tests'][test]['memLeaks'] != 0:
-            print('\t' + str(results['tests'][test]['memLeaks']) + ' bytes definitely lost ✘')
-        if results['tests'][test]['memErrors'] != 0:
-            print('\t' + str(results['tests'][test]['memErrors']) + ' memory errors ✘')
+        if num_memLeaks != 0:
+            print('\t' + str(num_memLeaks) + ' ' + byte_sin_plu(num_memLeaks) + ' definitely lost ✘')
+        if num_memErrors != 0:
+            print('\t' + str(num_memErrors) + ' memory ' + error_sin_plu(num_memErrors) + ' ✘')
 
         if not failed:
+            sys.stdout.write(GREEN)
             print('\tPassed '+ test +' ✓')
-
+        sys.stdout.write(RESET)
 
 def make_dirs():
     call('rm -rf out')
@@ -91,28 +133,36 @@ def run_tests():
         call('cp ../cpp/' + append_suffix(test, '.cpp') + ' .')
         call('cp ../in/' + append_suffix(test, '.in') + ' .')
         call('cp ../Makefile_test' + ' .')
+        sys.stdout.write(YELLOW)
         print('Compiling ' + test + '...', end='\r')
         compile_program_specified(test)
         print_compile_result(test)
+        sys.stdout.write(RESET)
 
         if not os.path.isfile('./' + test):
+            sys.stdout.write(RED)
             print('Error: Executable not made! Aborting ' + test + '.')
+            sys.stdout.write(RESET)
         else:
-            print('Running ' + test + '...', end='\r')
             run_program_specified(test)
-            print('Running ' + test + '... ✓')
+            sys.stdout.write(YELLOW)
             print('Comparing ' + test + '...', end='\r')
             compare_output(test)
             
             if results['tests'][test]['output']:
+                sys.stdout.write(GREEN)
                 print('Comparing ' + test + '... ✓')
             else:
+                sys.stdout.write(RED)
                 print('Comparing ' + test + '... ✘')
+                sys.stdout.write(RESET)
                 print_compare_failure(test)
 
+            sys.stdout.write(YELLOW)
             print('Valgrind ' + test + '...', end='\r')
             check_memory(test)
             print_valigrnd_result(test)
+            sys.stdout.write(RESET)
 
         print()
 
@@ -143,10 +193,8 @@ def compile_program_specified(test):
             regex_find_warnings = re.findall(r"(\d*) warnings generated.", line)
             regex_find_errors = re.findall(r"(\d*) errors generated.", line)
             if len(regex_find_warnings) > 0:
-                print(regex_find_warnings[0] + ' warnings! Check make logs (logs/' + append_suffix(test, '.log)'))
                 results['tests'][test]['warnings'] = regex_find_warnings[0]
             if len(regex_find_errors) > 0:
-                print(regex_find_errors[0] + ' errors! Check make logs (logs/' + append_suffix(test, '.log)'))
                 results['tests'][test]['errors'] = regex_find_errors[0]
 
     call('cp ' + append_suffix(test, '.log') + ' ../logs/' + append_suffix(test, '.log'))
@@ -211,14 +259,28 @@ def compare_output(test):
 ############## Print Results
         
 def print_compile_result(test):
-    if results['tests'][test]['warnings'] == 0 and results['tests'][test]['errors'] == 0:
+    global results
+    num_warnings = results['tests'][test]['warnings']
+    num_errors = results['tests'][test]['errors']
+
+    if num_warnings == 0 and num_errors == 0:
+        sys.stdout.write(GREEN)
         print('Compiling ' + test + '... warnings ✓ errors ✓')
-    elif results['tests'][test]['warnings'] != 0 and results['tests'][test]['errors'] == 0:
-        print('Compiling ' + test + '... warnings ✘ errors ✓')
-    elif results['tests'][test]['warnings'] == 0 and results['tests'][test]['errors'] != 0:
-        print('Compiling ' + test + '... warnings ✓ errors ✘')
+    elif num_warnings != 0 and num_errors == 0:
+        sys.stdout.write(RED)
+        print('Compiling ' + test + '... warnings ✘' + print_warning(num_warnings) + 'errors ✓')
+    elif num_warnings == 0 and num_errors != 0:
+        sys.stdout.write(RED)
+        print('Compiling ' + test + '... warnings ✓ errors ✘' + print_error(num_errors))
     else:
-        print('Compiling ' + test + '... warnings ✘ errors ✘')
+        sys.stdout.write(RED)
+        print('Compiling ' + test + '... warnings ✘' + print_warning(num_warnings) + 'errors ✘' + print_error(num_errors))
+
+def print_warning(num_warnings):
+    return ' (' + str(num_warnings) + ') '
+
+def print_error(num_errors):
+    return ' (' + str(num_errors) + ') '
 
 def print_compare_failure(test):
     output_file = '../out/' + append_suffix(test, '.out')
@@ -236,19 +298,26 @@ def print_compare_failure(test):
 
 def print_valigrnd_result(test):
     global results
-    if results['tests'][test]['memLeaks'] != 0 or results['tests'][test]['memErrors'] != 0:
+    num_memErrors = results['tests'][test]['memErrors']
+    num_memLeaks = results['tests'][test]['memLeaks']
+    if num_memLeaks != 0 or num_memErrors != 0:
+        sys.stdout.write(RED)
         print('Valgrind ' + test + '... ✘')
     else:
+        sys.stdout.write(GREEN)
         print('Valgrind ' + test + '... ✓')
-
-    if  results['tests'][test]['memLeaks'] != 0:
-        print('\tLeaks ' + test + '... ✘ (' + str(results['tests'][test]['memLeaks']) + ' bytes)')
+    if  num_memLeaks != 0:
+        sys.stdout.write(RED)
+        print('\tLeaks ' + test + '... ✘ (' + str(num_memLeaks) + ' ' + leak_sin_plu(num_memLeaks) + ')')
     else:
+        sys.stdout.write(GREEN)
         print('\tLeaks ' + test + '... ✓')
 
-    if  results['tests'][test]['memErrors'] != 0:
-        print('\tErrors ' + test + '... ✘ (' + str(results['tests'][test]['memErrors']) + ' errors)')
+    if  num_memErrors != 0:
+        sys.stdout.write(RED)
+        print('\tErrors ' + test + '... ✘ (' + str(num_memErrors) + ' ' + error_sin_plu(num_memErrors) + ')')
     else:
+        sys.stdout.write(GREEN)
         print('\tErrors ' + test + '... ✓')
 
 ############## Utilities
