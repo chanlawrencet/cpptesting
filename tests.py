@@ -46,9 +46,9 @@ def main():
 
 def leak_sin_plu(num):
     if num == 1:
-        return 'leak'
+        return 'byte leaked'
     else:
-        return 'leaks'
+        return 'bytes leaked'
 
 def warning_sin_plu(num):
     if num == 1:
