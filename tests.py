@@ -105,6 +105,10 @@ def test_summary():
             sys.stdout.write(GREEN)
             print('\tPassed '+ test +' ✓')
         sys.stdout.write(RESET)
+    
+    print('Test data stored in output.json.')
+    with open('output.json', 'w') as outfile:
+        json.dump(results, outfile, indent=4, sort_keys=True)
 
 def make_dirs():
     call('rm -rf out')
