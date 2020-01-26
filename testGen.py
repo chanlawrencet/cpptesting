@@ -61,7 +61,7 @@ def main():
     print()
     print('All files made, found in ./grading.')
 def copy_tests():
-    call('cp tests.py ./grading/')
+    call('cp run_autograder.py ./grading/')
 
 
 def make_JSON_distribute():

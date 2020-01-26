@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf8 -*-
+
 import os
 import sys
 import subprocess
@@ -17,14 +20,19 @@ REVERSE = "\033[;7m"
 tests_to_run = []
 configs = dict()
 configs['outputOnly'] = False
-
+configs['noInstall'] = False
 results = dict()
 results['tests'] = dict()
 results['compile'] = dict()
 
 
 def main():
+    call('cp ./submission/* .')
+    call('cp -r ./source/* .')
     parse_configs()
+    global configs
+    if not ('noInstall' in configs) :
+        call('sh setup.sh &> /dev/null')
     parse_args()
     make_dirs()
 
@@ -85,30 +93,32 @@ def test_summary():
 
         sys.stdout.write(RED)
         if num_errors != 0:
-            print('\t' + str(num_errors) + ' ' + error_sin_plu(num_memErrors) + ' ✘ (did not compile)')
+            print('\t' + str(num_errors) + ' ' + error_sin_plu(num_memErrors) + ' -fail (did not compile)')
             failed = True
         if num_warnings != 0:
-            print('\t' + str(num_warnings) + ' ' + warning_sin_plu(num_warnings) + ' ✘')
+            print('\t' + str(num_warnings) + ' ' + warning_sin_plu(num_warnings) + ' -fail')
             failed = True
         if not results['tests'][test]['output']:
-            print('\tOutput ✘')
+            print('\tOutput -fail')
             failed = True
         if num_memLeaks != 0:
-            print('\t' + str(num_memLeaks) + ' ' + byte_sin_plu(num_memLeaks) + ' definitely lost ✘')
+            print('\t' + str(num_memLeaks) + ' ' + byte_sin_plu(num_memLeaks) + ' definitely lost -fail')
         if num_memErrors != 0:
-            print('\t' + str(num_memErrors) + ' memory ' + error_sin_plu(num_memErrors) + ' ✘')
+            print('\t' + str(num_memErrors) + ' memory ' + error_sin_plu(num_memErrors) + ' -fail')
 
         if not failed and not made_executable:
-            print('\tFailed '+ test +' ✘')
+            print('\tFailed '+ test +' -fail')
 
         if not failed and made_executable:
             sys.stdout.write(GREEN)
-            print('\tPassed '+ test +' ✓')
+            print('\tPassed '+ test +' -pass')
         sys.stdout.write(RESET)
     
     print('Test data stored in output.json.')
     with open('output.json', 'w') as outfile:
         json.dump(results, outfile, indent=4, sort_keys=True)
+
+    make_gradescope()
 
 def make_dirs():
     call('rm -rf out')
@@ -161,10 +171,10 @@ def run_tests():
             
             if results['tests'][test]['output']:
                 sys.stdout.write(GREEN)
-                print('Comparing ' + test + '... ✓')
+                print('Comparing ' + test + '... -pass')
             else:
                 sys.stdout.write(RED)
-                print('Comparing ' + test + '... ✘')
+                print('Comparing ' + test + '... -fail')
                 sys.stdout.write(RESET)
                 print_compare_failure(test)
 
@@ -184,7 +194,7 @@ def run_tests():
 def run_program_specified(test):
     valgrind_file = '../vout/' + append_suffix(test, '.vout')
     output_file = '../out/' + append_suffix(test, '.out')
-    call('valgrind --log-file="' + valgrind_file + '" ' + test + ' < ' + append_suffix(test, '.in') + ' &> ' + output_file)
+    call('valgrind --log-file="' + valgrind_file + '" ./' + test + ' < ' + append_suffix(test, '.in') + ' &> ' + output_file)
 
 
 
@@ -275,16 +285,16 @@ def print_compile_result(test):
 
     if num_warnings == 0 and num_errors == 0:
         sys.stdout.write(GREEN)
-        print('Compiling ' + test + '... warnings ✓ errors ✓')
+        print('Compiling ' + test + '... warnings -pass errors -pass')
     elif num_warnings != 0 and num_errors == 0:
         sys.stdout.write(RED)
-        print('Compiling ' + test + '... warnings ✘' + print_warning(num_warnings) + 'errors ✓')
+        print('Compiling ' + test + '... warnings -fail' + print_warning(num_warnings) + 'errors -pass')
     elif num_warnings == 0 and num_errors != 0:
         sys.stdout.write(RED)
-        print('Compiling ' + test + '... warnings ✓ errors ✘' + print_error(num_errors))
+        print('Compiling ' + test + '... warnings -pass errors -fail' + print_error(num_errors))
     else:
         sys.stdout.write(RED)
-        print('Compiling ' + test + '... warnings ✘' + print_warning(num_warnings) + 'errors ✘' + print_error(num_errors))
+        print('Compiling ' + test + '... warnings -fail' + print_warning(num_warnings) + 'errors -fail' + print_error(num_errors))
 
 def print_warning(num_warnings):
     return ' (' + str(num_warnings) + ') '
@@ -312,25 +322,47 @@ def print_valigrnd_result(test):
     num_memLeaks = results['tests'][test]['memLeaks']
     if num_memLeaks != 0 or num_memErrors != 0:
         sys.stdout.write(RED)
-        print('Valgrind ' + test + '... ✘')
+        print('Valgrind ' + test + '... -fail')
     else:
         sys.stdout.write(GREEN)
-        print('Valgrind ' + test + '... ✓')
+        print('Valgrind ' + test + '... -pass')
     if  num_memLeaks != 0:
         sys.stdout.write(RED)
-        print('\tLeaks ' + test + '... ✘ (' + str(num_memLeaks) + ' ' + leak_sin_plu(num_memLeaks) + ')')
+        print('\tLeaks ' + test + '... -fail (' + str(num_memLeaks) + ' ' + leak_sin_plu(num_memLeaks) + ')')
     else:
         sys.stdout.write(GREEN)
-        print('\tLeaks ' + test + '... ✓')
+        print('\tLeaks ' + test + '... -pass')
 
     if  num_memErrors != 0:
         sys.stdout.write(RED)
-        print('\tErrors ' + test + '... ✘ (' + str(num_memErrors) + ' ' + error_sin_plu(num_memErrors) + ')')
+        print('\tErrors ' + test + '... -fail (' + str(num_memErrors) + ' ' + error_sin_plu(num_memErrors) + ')')
     else:
         sys.stdout.write(GREEN)
-        print('\tErrors ' + test + '... ✓')
+        print('\tErrors ' + test + '... -pass')
 
 ############## Utilities
+
+def make_gradescope():
+    global results
+    global tests_to_run
+
+    new_dict = dict()
+    new_dict['tests'] = []
+    for test in tests_to_run:
+        currResult = dict()
+        currResult['name'] = test
+        if results['tests'][test]['output']:
+            currResult['score'] = 2.0
+        else:
+            currResult['score'] = 0.0
+        new_dict['tests'].append(currResult)
+
+
+    with open('results.json', 'w') as outfile:
+        json.dump(new_dict, outfile, indent=4, sort_keys=True)
+
+    call('mv results.json results')
+
 
 def set_tests_to_run():
     global tests_to_run
@@ -348,16 +380,21 @@ def parse_configs():
 def parse_args():
     global configs
     global tests_to_run
+    
     i = 1
     if len(sys.argv) > 1:
         if sys.argv[1] == '-clean':
             print('Deleting folders', end='\r')
             delete_folders()
-            print('Deleting folders ✓', end='\n')
+            print('Deleting folders -pass', end='\n')
             exit()
         if sys.argv[1] == '-output':
             print('setting to true')
             configs['outputOnly'] = True
+            i = 2
+        if sys.argv[1] == '-noInstall':
+            print('not installing clang++ and others')
+            configs['noInstall'] = False
             i = 2
         tests_to_run = sys.argv[i:]
 
